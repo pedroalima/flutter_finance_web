@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_finance_web/components/CustomInput.dart';
-import 'package:flutter_finance_web/components/CustomButton.dart';
+import 'package:flutter_finance_web/pages/forgot_password.dart';
+import 'package:flutter_finance_web/pages/home.dart';
+import 'package:flutter_finance_web/pages/register.dart';
+import '../components/_commons/custom_input.dart';
+import '../components/_commons/custom_button.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +29,13 @@ class LoginPage extends StatelessWidget {
                   color: Colors.blueAccent,
                 ),
                 const SizedBox(height: 16),
+
                 const Text(
                   "Finanças App",
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
+
                 const Text(
                   "Gerencie seu dinheiro com inteligência",
                   style: TextStyle(color: Colors.grey),
@@ -34,19 +43,32 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 40),
 
                 // Campos de Entrada
-                const CustomInput(label: "E-mail", icon: Icons.email_outlined),
+                CustomInput(
+                  label: "E-mail",
+                  icon: Icons.email_outlined,
+                  controller: _emailController,
+                ),
                 const SizedBox(height: 16),
-                const CustomInput(
+
+                CustomInput(
                   label: "Senha",
                   icon: Icons.lock_outline,
                   isPassword: true,
+                  controller: _passwordController,
                 ),
 
                 // Esqueci minha senha
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgotPasswordPage(),
+                        ),
+                      );
+                    },
                     child: const Text("Esqueceu a senha?"),
                   ),
                 ),
@@ -55,9 +77,21 @@ class LoginPage extends StatelessWidget {
                 // Ações
                 CustomButton(
                   text: "Entrar",
-                  onPressed: () {
+                  onPressed: () async {
                     // Lógica de autenticação
-                    print('Entrei');
+                    final result = await _authService.login(
+                      _emailController.text,
+                      _passwordController.text,
+                    );
+
+                    if (result != null) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HomePage(),
+                        ),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 16),
@@ -68,7 +102,12 @@ class LoginPage extends StatelessWidget {
                     const Text("Não tem uma conta?"),
                     TextButton(
                       onPressed: () {
-                        print('Criar conta');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RegisterPage(),
+                          ),
+                        );
                       },
                       child: const Text(
                         "Cadastre-se",
