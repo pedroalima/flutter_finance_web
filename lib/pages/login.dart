@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_finance_web/pages/forgot_password.dart';
 import 'package:flutter_finance_web/pages/home.dart';
@@ -78,17 +79,34 @@ class LoginPage extends StatelessWidget {
                 CustomButton(
                   text: "Entrar",
                   onPressed: () async {
-                    // Lógica de autenticação
-                    final result = await _authService.login(
-                      _emailController.text,
-                      _passwordController.text,
-                    );
+                    try {
+                      final result = await _authService.login(
+                        _emailController.text,
+                        _passwordController.text,
+                      );
 
-                    if (result != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomePage(),
+                      if (result != null) {
+                        Navigator.pushReplacementNamed(context, '/');
+                      }
+                    } on DioException catch (e) {
+                      String errorMessage = "Erro ao conectar ao servidor";
+
+                      if (e.response?.data != null &&
+                          e.response?.data['message'] != null) {
+                        errorMessage = e.response?.data['message'];
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(errorMessage),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    } catch (e) {
+                      // Captura qualquer outro erro inesperado
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Ocorreu um erro inesperado"),
                         ),
                       );
                     }
