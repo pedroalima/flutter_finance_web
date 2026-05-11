@@ -86,7 +86,12 @@ class LoginPage extends StatelessWidget {
                       );
 
                       if (result != null) {
-                        Navigator.pushReplacementNamed(context, '/');
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomePage(),
+                          ),
+                        );
                       }
                     } on DioException catch (e) {
                       String errorMessage = "Erro ao conectar ao servidor";

@@ -3,23 +3,42 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final _storage = const FlutterSecureStorage();
+  late final Dio _dio;
 
-  // Se estiver no emulador Android, use 10.0.2.2. Se for iOS/Web, use localhost.
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'http://192.168.1.18:8080/api',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  AuthService() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: 'http://192.168.1.18:8080/api',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    // Adiciona o Interceptor para injetar o token automaticamente
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: 'auth_token');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (DioException e, handler) {
+          if (e.response?.statusCode == 401) {
+            // Opcional: Se der 401, você pode deslogar o usuário aqui
+            print("Token expirado ou inválido");
+          }
+          return handler.next(e);
+        },
+      ),
+    );
+  }
 
   Future<Map<String, dynamic>?> login(String email, String password) async {
     try {
-      print("Enviando login para: ${_dio.options.baseUrl}/auth/login");
       final response = await _dio.post(
         '/auth/login',
         data: {'email': email, 'password': password},
@@ -27,19 +46,26 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-
         String token = data['token'];
-
         await _storage.write(key: 'auth_token', value: token);
-
-        _dio.options.headers['Authorization'] = 'Bearer $token';
-
-        print("Token salvo com sucesso!");
         return data;
       }
     } on DioException catch (e) {
       // Aqui você trata erros de validação do Laravel (422)
       print("Erro no login: ${e.response?.data['message']}");
+      rethrow;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getUser() async {
+    try {
+      final response = await _dio.get('/user/me');
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+    } on DioException catch (e) {
+      print("Erro ao buscar usuário: ${e.response?.data['message']}");
       rethrow;
     }
     return null;

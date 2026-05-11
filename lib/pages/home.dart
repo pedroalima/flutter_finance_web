@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_finance_web/providers/user_provider.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   bool _showBalance = true; // Controle do "olhinho"
 
   @override
   Widget build(BuildContext context) {
+    final userAsync = ref.watch(fetchUserProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo acinzentado suave
       body: Column(
         children: [
           // 1. Cabeçalho com Saldo
-          _buildHeader(),
+          _buildHeader(userAsync),
 
           // 2. Título da Listagem
           Padding(
@@ -57,7 +61,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Widget do Cabeçalho
-  Widget _buildHeader() {
+  Widget _buildHeader(AsyncValue<Map<String, dynamic>> userAsync) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 60, bottom: 30, left: 24, right: 24),
@@ -78,11 +82,12 @@ class _HomePageState extends State<HomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Olá, Pedro!",
+                    // pegar apenas o primeiro nome
+                    "Olá, ${userAsync.value?['name']?.split(' ').first ?? "Usuário"}!",
                     style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                   Text(
@@ -102,19 +107,34 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 32),
+
           const Text(
             "Saldo disponível",
             style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
+
           Row(
             children: [
-              Text(
-                _showBalance ? "R\$ 4.580,00" : "R\$ ••••••",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+              userAsync.when(
+                data: (user) {
+                  final balance = user['balance'] ?? 0.0;
+                  return Text(
+                    _showBalance
+                        ? "R\$ ${balance.toStringAsFixed(2)}"
+                        : "R\$ ••••••",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                },
+                loading: () => const Text(
+                  "...",
+                  style: TextStyle(color: Colors.white, fontSize: 32),
                 ),
+                error: (err, _) =>
+                    const Text("Erro", style: TextStyle(color: Colors.white)),
               ),
               IconButton(
                 icon: Icon(
