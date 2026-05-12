@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_finance_web/pages/login.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 
 void main() {
   runApp(ProviderScope(child: const MyApp()));
@@ -16,6 +18,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
+      supportedLocales: const [
+        Locale('pt', 'BR'), // Português Brasil
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        FormBuilderLocalizations.delegate,
+      ],
       home: LoginPage(),
     );
   }

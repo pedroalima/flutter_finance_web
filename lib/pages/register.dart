@@ -1,13 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import '../components/_commons/custom_button.dart';
 import '../components/_commons/custom_input.dart';
 import '../services/auth_service.dart';
 
 class RegisterPage extends StatelessWidget {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
   final AuthService _authService = AuthService();
 
   RegisterPage({super.key});
@@ -25,87 +25,103 @@ class RegisterPage extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const Text(
-                  "Nova Conta",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Cadastre-se para começar a organizar suas finanças",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 40),
+            child: FormBuilder(
+              key: _formKey,
+              child: Column(
+                children: [
+                  const Text(
+                    "Nova Conta",
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Cadastre-se para começar a organizar suas finanças",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 40),
 
-                // Campos reutilizando seus componentes
-                CustomInput(
-                  label: "Nome Completo",
-                  icon: Icons.person_outline,
-                  controller: _nameController,
-                ),
-                const SizedBox(height: 16),
+                  // Campos reutilizando seus componentes
+                  CustomInput(
+                    name: 'name',
+                    label: "Nome Completo",
+                    icon: Icons.person_outline,
+                    validator: FormBuilderValidators.required(),
+                  ),
+                  const SizedBox(height: 16),
 
-                CustomInput(
-                  label: "E-mail",
-                  icon: Icons.email_outlined,
-                  controller: _emailController,
-                ),
-                const SizedBox(height: 16),
+                  CustomInput(
+                    name: 'email',
+                    label: "E-mail",
+                    icon: Icons.email_outlined,
+                    validator: FormBuilderValidators.email(),
+                  ),
+                  const SizedBox(height: 16),
 
-                CustomInput(
-                  label: "Senha",
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  controller: _passwordController,
-                ),
-                const SizedBox(height: 32),
+                  CustomInput(
+                    name: 'password',
+                    label: "Senha",
+                    icon: Icons.lock_outline,
+                    isPassword: true,
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(),
+                      FormBuilderValidators.password(),
+                    ]),
+                  ),
+                  const SizedBox(height: 32),
 
-                CustomButton(
-                  text: "Criar Conta",
-                  onPressed: () async {
-                    try {
-                      final result = await _authService.register(
-                        _nameController.text,
-                        _emailController.text,
-                        _passwordController.text,
-                      );
+                  CustomButton(
+                    text: "Criar Conta",
+                    onPressed: () async {
+                      if (_formKey.currentState!.saveAndValidate() ?? false) {
+                        final formData = _formKey.currentState!.value;
+                        try {
+                          final result = await _authService.register(
+                            formData['name'] as String,
+                            formData['email'] as String,
+                            formData['password'] as String,
+                          );
 
-                      if (result != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Usuário cadastrado com sucesso!"),
-                          ),
-                        );
-                        Navigator.pop(context); // Volta para a tela de Login
+                          if (result != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Usuário cadastrado com sucesso!",
+                                ),
+                              ),
+                            );
+                            Navigator.pop(
+                              context,
+                            ); // Volta para a tela de Login
+                          }
+                        } on DioException catch (e) {
+                          String errorMessage =
+                              "Falha ao cadastrar. Verifique os dados.";
+
+                          if (e.response?.data != null &&
+                              e.response?.data['message'] != null) {
+                            errorMessage = e.response?.data['message'];
+                          }
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(errorMessage),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        } catch (e) {
+                          // Erros genéricos (fora do Dio)
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Ocorreu um erro inesperado."),
+                            ),
+                          );
+                        }
                       }
-                    } on DioException catch (e) {
-                      String errorMessage =
-                          "Falha ao cadastrar. Verifique os dados.";
-
-                      if (e.response?.data != null &&
-                          e.response?.data['message'] != null) {
-                        errorMessage = e.response?.data['message'];
-                      }
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(errorMessage),
-                          backgroundColor: Colors.redAccent,
-                        ),
-                      );
-                    } catch (e) {
-                      // Erros genéricos (fora do Dio)
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Ocorreu um erro inesperado."),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

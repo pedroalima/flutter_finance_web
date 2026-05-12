@@ -14,14 +14,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(fetchUserProvider);
+    final userData = ref.watch(fetchUserProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo acinzentado suave
       body: Column(
         children: [
           // 1. Cabeçalho com Saldo
-          _buildHeader(userAsync),
+          _buildHeader(userData),
 
           // 2. Título da Listagem
           Padding(
@@ -61,7 +61,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Widget do Cabeçalho
-  Widget _buildHeader(AsyncValue<Map<String, dynamic>> userAsync) {
+  Widget _buildHeader(AsyncValue<Map<String, dynamic>> userData) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 60, bottom: 30, left: 24, right: 24),
@@ -87,7 +87,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 children: [
                   Text(
                     // pegar apenas o primeiro nome
-                    "Olá, ${userAsync.value?['name']?.split(' ').first ?? "Usuário"}!",
+                    "Olá, ${userData.value?['name']?.split(' ').first ?? "Usuário"}!",
                     style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                   Text(
@@ -115,7 +115,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
           Row(
             children: [
-              userAsync.when(
+              userData.when(
                 data: (user) {
                   final balance = user['balance'] ?? 0.0;
                   return Text(

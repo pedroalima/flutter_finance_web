@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class CustomInput extends StatelessWidget {
+  final String name; // Chave do campo
   final String label;
   final IconData icon;
   final bool isPassword;
-  final TextEditingController? controller;
+  final String? Function(String?)? validator;
 
   const CustomInput({
     super.key,
+    required this.name,
     required this.label,
     required this.icon,
     this.isPassword = false,
-    this.controller,
+    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
+    return FormBuilderTextField(
+      name: name,
       obscureText: isPassword,
+      validator: validator,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
