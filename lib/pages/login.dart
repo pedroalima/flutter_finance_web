@@ -4,19 +4,22 @@ import 'package:flutter_finance_web/pages/forgot_password.dart';
 import 'package:flutter_finance_web/pages/home.dart';
 import 'package:flutter_finance_web/pages/register.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import '../components/_commons/custom_input.dart';
 import '../components/_commons/custom_button.dart';
-import '../services/auth_service.dart';
+import 'package:flutter_finance_web/providers/auth_write_provider.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends ConsumerWidget {
   final _formKey = GlobalKey<FormBuilderState>();
-  final AuthService _authService = AuthService();
 
   LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final authController = ref.read(authControllerProvider.notifier);
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -61,7 +64,7 @@ class LoginPage extends StatelessWidget {
                     isPassword: true,
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
-                      FormBuilderValidators.password(),
+                      FormBuilderValidators.minLength(8),
                     ]),
                   ),
 
@@ -83,46 +86,48 @@ class LoginPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   // Ações
                   CustomButton(
-                    text: "Entrar",
-                    onPressed: () async {
-                      if (_formKey.currentState?.saveAndValidate() ?? false) {
-                        final formData = _formKey.currentState!.value;
+                    text: authState.isLoading ? "Entrando..." : "Entrar",
+                    onPressed: authState.isLoading
+                        ? null // Desabilita o botão enquanto a API responde
+                        : () async {
+                            if (_formKey.currentState?.saveAndValidate() ??
+                                false) {
+                              final formData = _formKey.currentState!.value;
 
-                        try {
-                          final result = await _authService.login(
-                            formData['email'] as String,
-                            formData['password'] as String,
-                          );
-                          if (result != null) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const HomePage(),
-                              ),
-                            );
-                          }
-                        } on DioException catch (e) {
-                          String errorMessage = "Erro ao conectar ao servidor";
-                          if (e.response?.data != null &&
-                              e.response?.data['message'] != null) {
-                            errorMessage = e.response?.data['message'];
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(errorMessage),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                        } catch (e) {
-                          // Captura qualquer outro erro inesperado
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Ocorreu um erro inesperado"),
-                            ),
-                          );
-                        }
-                      }
-                    },
+                              try {
+                                final result = await authController.login(
+                                  formData['email'] as String,
+                                  formData['password'] as String,
+                                );
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomePage(),
+                                  ),
+                                );
+                              } on DioException catch (e) {
+                                String errorMessage =
+                                    "Erro ao conectar ao servidor";
+                                if (e.response?.data != null &&
+                                    e.response?.data['message'] != null) {
+                                  errorMessage = e.response?.data['message'];
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(errorMessage),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                );
+                              } catch (e) {
+                                // Captura qualquer outro erro inesperado
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Ocorreu um erro inesperado"),
+                                  ),
+                                );
+                              }
+                            }
+                          },
                   ),
                   const SizedBox(height: 16),
                   Row(

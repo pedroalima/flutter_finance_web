@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class CustomInput extends StatelessWidget {
-  final String name; // Chave do campo
+  final String name;
   final String label;
   final IconData icon;
   final bool isPassword;

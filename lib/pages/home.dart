@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_finance_web/providers/user_provider.dart';
+import 'package:flutter_finance_web/providers/auth_provider.dart';
+import 'package:flutter_finance_web/providers/transaction_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -10,11 +11,12 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  bool _showBalance = true; // Controle do "olhinho"
+  bool _showBalance = true;
 
   @override
   Widget build(BuildContext context) {
     final userData = ref.watch(fetchUserProvider);
+    final transactionsData = ref.watch(getTransactionsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo acinzentado suave
@@ -38,14 +40,26 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
 
-          // 3. Lista de Transações (Exemplo estático por enquanto)
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: 5,
-              itemBuilder: (context, index) {
-                return _buildTransactionItem();
+            child: transactionsData.when(
+              data: (transactions) {
+                if (transactions.isEmpty) {
+                  return const Center(
+                    child: Text("Nenhuma transação encontrada."),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: transactions.length,
+                  itemBuilder: (context, index) {
+                    final transaction = transactions[index];
+                    return _buildTransactionItem(transaction);
+                  },
+                );
               },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) =>
+                  Center(child: Text("Erro ao carregar transações: $err")),
             ),
           ),
         ],
@@ -151,7 +165,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Widget de cada item da lista
-  Widget _buildTransactionItem() {
+  Widget _buildTransactionItem(Map<String, dynamic> transaction) {
+    // 1. Identifica se é entrada ou saída baseado no type_id (do seu banco)
+    final bool isIncome = transaction['type_id'] == 1;
+    final color = isIncome ? Colors.green : Colors.red;
+    final icon = isIncome ? Icons.arrow_upward : Icons.shopping_bag_outlined;
+
+    // 2. Formata o valor
+    final double amount =
+        double.tryParse(transaction['amount'].toString()) ?? 0.0;
+    final String prefix = isIncome ? "+ R\$ " : "- R\$ ";
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -171,31 +195,35 @@ class _HomePageState extends ConsumerState<HomePage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.shopping_bag_outlined, color: Colors.red),
+            child: Icon(icon, color: color),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Supermercado",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  transaction['description'] ?? "Sem descrição",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 Text(
-                  "Hoje às 10:30",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  // Ideal usar o pacote 'intl' para formatar a data transaction['date']
+                  transaction['date'] ?? "",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
           ),
-          const Text(
-            "- R\$ 120,00",
+          Text(
+            "$prefix${amount.toStringAsFixed(2)}",
             style: TextStyle(
-              color: Colors.red,
+              color: color,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),

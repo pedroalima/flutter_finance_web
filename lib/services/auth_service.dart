@@ -3,39 +3,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final _storage = const FlutterSecureStorage();
-  late final Dio _dio;
+  final Dio _dio;
 
-  AuthService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: 'http://192.168.1.18:8080/api',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
-
-    // Adiciona o Interceptor para injetar o token automaticamente
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await _storage.read(key: 'auth_token');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
-        onError: (DioException e, handler) {
-          if (e.response?.statusCode == 401) {
-            // Opcional: Se der 401, você pode deslogar o usuário aqui
-            print("Token expirado ou inválido");
-          }
-          return handler.next(e);
-        },
-      ),
-    );
-  }
+  AuthService(this._dio);
 
   Future<Map<String, dynamic>?> login(String email, String password) async {
     try {

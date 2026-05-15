@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'user_provider.dart';
+part of 'auth_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -48,4 +48,4 @@ final class FetchUserProvider
   }
 }
 
-String _$fetchUserHash() => r'87fd2266c5ef4eaca0d5a010359250334be87dc3';
+String _$fetchUserHash() => r'b5fc1e6cd86c7dbb1f62b8e63278b4d325b158e6';
